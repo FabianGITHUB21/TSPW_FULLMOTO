@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Search, ShoppingCart, User, Menu, Star, Grid, List } from "lucide-react"
 import Link from "next/link"
 import { useCart } from "@/contexts/CartContext"
-// IMPORTACIÓN CLAVE: Aquí se trae el componente carrusel
+
 import { ProductCarousel } from "@/components/ProductCarousel" 
 
 const allProducts = [
@@ -344,9 +344,9 @@ export default function HomePage() {
               <h1 id="hero-heading" className="text-5xl font-bold mb-6 text-balance">
                 Repuestos de <span className="text-orange-400">Calidad</span> para tu Moto
               </h1>
-              <p className="text-xl mb-8 text-gray-300 text-pretty">
-                Encuentra las mejores marcas en repuestos y accesorios para motocicletas. Calidad garantizada, envío
-                rápido y precios competitivos.
+              <p className="text-xl mb-8 text-gray-100 text-pretty"> 
+                  Encuentra las mejores marcas en repuestos y accesorios para motocicletas. Calidad garantizada, envío
+                  rápido y precios competitivos.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button size="lg" className="bg-orange-600 hover:bg-orange-700" asChild>
@@ -374,10 +374,6 @@ export default function HomePage() {
       </section>
       {/* FIN DEL HERO BANNER */}
       
-      {/* 💥 NUEVA SECCIÓN: CARRUSEL DE ACCESO RÁPIDO 💥 */}
-      {/* Este componente (ProductCarousel) muestra la implementación de un componente modular en Next.js.
-          Utiliza la prop 'products' con todos los productos disponibles y maneja sus propios eventos internos 
-          (clic en flechas, hover en tarjetas y clic en imagen). */}
       <ProductCarousel
         products={allProducts} // Le pasamos el array de todos tus productos
         title="Acceso Rápido a Nuestro Catálogo Completo"
