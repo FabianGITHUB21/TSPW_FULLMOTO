@@ -349,8 +349,8 @@ export default function HomePage() {
                   rápido y precios competitivos.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-orange-600 hover:bg-orange-700" asChild>
-                  <Link href="/catalog">Ver Catálogo</Link>
+                <Button size="lg" className="bg-orange-800 hover:bg-orange-900 text-white" asChild>
+                <Link href="/catalog">Ver Catálogo</Link>
                 </Button>
                 <Button
                   size="lg"
@@ -466,7 +466,7 @@ export default function HomePage() {
                       </div>
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="text-2xl font-bold text-orange-600">${product.price}</span>
+                          <span className="text-2xl font-bold text-orange-900">${product.price}</span>
                           {product.originalPrice > product.price && (
                             <span className="text-sm text-gray-500 line-through ml-2">${product.originalPrice}</span>
                           )}
@@ -536,7 +536,7 @@ export default function HomePage() {
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Categorías</h4>
+              <h2 className="font-semibold mb-4">Categorías</h2>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li>
                   <Link href="/catalog?category=Frenos" className="hover:text-white">
