@@ -29,50 +29,149 @@ interface AccessibilitySettings {
   fontFamily: string
 }
 
+const DEFAULTS: AccessibilitySettings = {
+  fontSize: 100,
+  highContrast: false,
+  darkMode: false,
+  reducedMotion: false,
+  screenReader: false,
+  largeButtons: false,
+  colorBlindFriendly: false,
+  fontFamily: "sans-serif",
+}
+
 export default function AccessibilityFeatures() {
   const [isOpen, setIsOpen] = useState(false)
-  const [settings, setSettings] = useState<AccessibilitySettings>({
-    fontSize: 100,
-    highContrast: false,
-    darkMode: false,
-    reducedMotion: false,
-    screenReader: false,
-    largeButtons: false,
-    colorBlindFriendly: false,
-    fontFamily: "sans-serif",
-  })
+  const [settings, setSettings] = useState<AccessibilitySettings>(DEFAULTS)
 
+  // cargar
   useEffect(() => {
-    const savedSettings = localStorage.getItem("accessibility-settings")
-    if (savedSettings) {
-      setSettings(JSON.parse(savedSettings))
+    const saved = localStorage.getItem("accessibility-settings")
+    if (saved) {
+      try {
+        setSettings(JSON.parse(saved))
+      } catch {
+        setSettings(DEFAULTS)
+      }
     }
   }, [])
 
+  // guardar y aplicar
   useEffect(() => {
     localStorage.setItem("accessibility-settings", JSON.stringify(settings))
     applySettings(settings)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [settings])
 
-  const applySettings = (newSettings: AccessibilitySettings) => {
+  const applySettings = (s: AccessibilitySettings) => {
     const root = document.documentElement
-    root.style.fontSize = `${newSettings.fontSize}%`
-    root.style.fontFamily = newSettings.fontFamily
 
-    if (newSettings.highContrast) root.classList.add("high-contrast")
-    else root.classList.remove("high-contrast")
+    // tamaño y tipografía
+    root.style.fontSize = `${s.fontSize}%`
+    root.style.fontFamily = s.fontFamily
 
-    if (newSettings.darkMode) root.classList.add("dark")
-    else root.classList.remove("dark")
+    // clases de utilidad
+    toggleClass(root, "high-contrast", s.highContrast)
+    toggleClass(root, "reduce-motion", s.reducedMotion)
+    toggleClass(root, "large-buttons", s.largeButtons)
+    toggleClass(root, "color-blind-friendly", s.colorBlindFriendly)
 
-    if (newSettings.reducedMotion) root.classList.add("reduce-motion")
-    else root.classList.remove("reduce-motion")
+    // modo oscuro: además de clase, escribimos variables para cubrir todo
+    if (s.darkMode) {
+      root.classList.add("dark")
+      // variables que cubren elementos no diseñados con dark:...
+      setDarkVariables(root)
+      // cambiar images with data-dark
+      swapImagesForDarkMode(true)
+      // meta theme-color (mobile address bar)
+      setMetaThemeColor("#0b0b0f")
+    } else {
+      root.classList.remove("dark")
+      setLightVariables(root)
+      swapImagesForDarkMode(false)
+      setMetaThemeColor("#ffffff")
+    }
 
-    if (newSettings.largeButtons) root.classList.add("large-buttons")
-    else root.classList.remove("large-buttons")
+    // high contrast + color blind may change accent colors
+    if (s.highContrast) setHighContrastVariables(root)
+    else if (s.colorBlindFriendly) setColorBlindVariables(root)
+  }
 
-    if (newSettings.colorBlindFriendly) root.classList.add("color-blind-friendly")
-    else root.classList.remove("color-blind-friendly")
+  // helpers para variables
+  const setDarkVariables = (root: HTMLElement) => {
+    root.style.setProperty("--bg", "#0b0b0f")
+    root.style.setProperty("--text", "#e6e6e6")
+    root.style.setProperty("--card", "#111217")
+    root.style.setProperty("--muted", "#9a9aa0")
+    root.style.setProperty("--primary", "#8ab4ff")
+    root.style.setProperty("--input-bg", "#0f1113")
+    root.style.setProperty("--border", "#1f2937")
+  }
+
+  const setLightVariables = (root: HTMLElement) => {
+    root.style.setProperty("--bg", "#ffffff")
+    root.style.setProperty("--text", "#111827")
+    root.style.setProperty("--card", "#f6f6f9")
+    root.style.setProperty("--muted", "#6b7280")
+    root.style.setProperty("--primary", "#1a73e8")
+    root.style.setProperty("--input-bg", "#ffffff")
+    root.style.setProperty("--border", "#e5e7eb")
+  }
+
+  const setHighContrastVariables = (root: HTMLElement) => {
+    root.style.setProperty("--text", "#000000")
+    root.style.setProperty("--bg", "#ffff00")
+    root.style.setProperty("--card", "#ffffff")
+    root.style.setProperty("--primary", "#000000")
+  }
+
+  const setColorBlindVariables = (root: HTMLElement) => {
+    // paleta amigable (ejemplo)
+    root.style.setProperty("--primary", "#0b85a6")
+  }
+
+  const setMetaThemeColor = (color: string) => {
+    let meta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null
+    if (!meta) {
+      meta = document.createElement("meta")
+      meta.name = "theme-color"
+      document.head.appendChild(meta)
+    }
+    meta.content = color
+  }
+
+  const toggleClass = (el: Element, cls: string, enabled: boolean) => {
+    if (enabled) el.classList.add(cls)
+    else el.classList.remove(cls)
+  }
+
+  // intercambio de imágenes con atributo data-dark
+  const swapImagesForDarkMode = (enable: boolean) => {
+    // imgs y svgs con data-dark
+    const nodes = Array.from(document.querySelectorAll<HTMLImageElement | HTMLSourceElement | HTMLVideoElement>("img[data-dark], source[data-dark]"))
+    nodes.forEach((node) => {
+      const el = node as HTMLImageElement
+      const dark = el.getAttribute("data-dark")
+      const light = el.getAttribute("src") || el.getAttribute("data-light")
+      if (!dark) return
+      if (enable) {
+        // guardar src original si no está guardado
+        if (!el.dataset.light) el.dataset.light = el.getAttribute("src") || ""
+        if (el.dataset.light !== dark) el.setAttribute("src", dark)
+      } else {
+        // restaurar
+        if (el.dataset.light) el.setAttribute("src", el.dataset.light)
+      }
+    })
+
+    // para backgrounds inline (data-bg-dark)
+    const bgEls = Array.from(document.querySelectorAll<HTMLElement>("[data-bg-dark]"))
+    bgEls.forEach((el) => {
+      const darkBg = el.getAttribute("data-bg-dark")
+      const lightBg = el.getAttribute("data-bg-light") || ""
+      if (enable && darkBg) el.style.backgroundImage = `url(${darkBg})`
+      else el.style.backgroundImage = lightBg ? `url(${lightBg})` : ""
+    })
   }
 
   const updateSetting = (key: keyof AccessibilitySettings, value: any) => {
@@ -80,32 +179,17 @@ export default function AccessibilityFeatures() {
   }
 
   const resetSettings = () => {
-    const defaultSettings: AccessibilitySettings = {
-      fontSize: 100,
-      highContrast: false,
-      darkMode: false,
-      reducedMotion: false,
-      screenReader: false,
-      largeButtons: false,
-      colorBlindFriendly: false,
-      fontFamily: "sans-serif",
-    }
-    setSettings(defaultSettings)
+    setSettings(DEFAULTS)
   }
 
   const increaseFontSize = () => {
-    if (settings.fontSize < 150) {
-      updateSetting("fontSize", settings.fontSize + 10)
-    }
+    if (settings.fontSize < 150) updateSetting("fontSize", settings.fontSize + 10)
   }
 
   const decreaseFontSize = () => {
-    if (settings.fontSize > 80) {
-      updateSetting("fontSize", settings.fontSize - 10)
-    }
+    if (settings.fontSize > 80) updateSetting("fontSize", settings.fontSize - 10)
   }
 
-  // 🔤 Cambiar tipografía con botón
   const changeFontFamily = () => {
     const order = ["sans-serif", "serif", "monospace"]
     const currentIndex = order.indexOf(settings.fontFamily)
@@ -257,16 +341,8 @@ export default function AccessibilityFeatures() {
                 <Font className="h-4 w-4" />
                 <span className="text-sm">Cambiar Tipografía</span>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={changeFontFamily}
-              >
-                {settings.fontFamily === "sans-serif"
-                  ? "Sans"
-                  : settings.fontFamily === "serif"
-                  ? "Serif"
-                  : "Mono"}
+              <Button variant="outline" size="sm" onClick={changeFontFamily}>
+                {settings.fontFamily === "sans-serif" ? "Sans" : settings.fontFamily === "serif" ? "Serif" : "Mono"}
               </Button>
             </div>
 
@@ -286,11 +362,7 @@ export default function AccessibilityFeatures() {
             </div>
 
             {/* Restablecer */}
-            <Button
-              variant="outline"
-              className="w-full bg-transparent"
-              onClick={resetSettings}
-            >
+            <Button variant="outline" className="w-full bg-transparent" onClick={resetSettings}>
               <RotateCcw className="h-4 w-4 mr-2" />
               Restablecer
             </Button>
@@ -300,3 +372,4 @@ export default function AccessibilityFeatures() {
     </div>
   )
 }
+
