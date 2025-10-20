@@ -4,7 +4,19 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Accessibility, ZoomIn, ZoomOut, Eye, EyeOff, Palette, Type, Volume2, RotateCcw, Settings } from "lucide-react"
+import {
+  Accessibility,
+  ZoomIn,
+  ZoomOut,
+  Eye,
+  EyeOff,
+  Palette,
+  Type,
+  Volume2,
+  RotateCcw,
+  Settings,
+  Font,
+} from "lucide-react"
 
 interface AccessibilitySettings {
   fontSize: number
@@ -14,6 +26,7 @@ interface AccessibilitySettings {
   screenReader: boolean
   largeButtons: boolean
   colorBlindFriendly: boolean
+  fontFamily: string
 }
 
 export default function AccessibilityFeatures() {
@@ -26,10 +39,10 @@ export default function AccessibilityFeatures() {
     screenReader: false,
     largeButtons: false,
     colorBlindFriendly: false,
+    fontFamily: "sans-serif",
   })
 
   useEffect(() => {
-    // Load settings from localStorage
     const savedSettings = localStorage.getItem("accessibility-settings")
     if (savedSettings) {
       setSettings(JSON.parse(savedSettings))
@@ -37,53 +50,29 @@ export default function AccessibilityFeatures() {
   }, [])
 
   useEffect(() => {
-    // Save settings to localStorage
     localStorage.setItem("accessibility-settings", JSON.stringify(settings))
-
-    // Apply settings to document
     applySettings(settings)
   }, [settings])
 
   const applySettings = (newSettings: AccessibilitySettings) => {
     const root = document.documentElement
-
-    // Font size
     root.style.fontSize = `${newSettings.fontSize}%`
+    root.style.fontFamily = newSettings.fontFamily
 
-    // High contrast
-    if (newSettings.highContrast) {
-      root.classList.add("high-contrast")
-    } else {
-      root.classList.remove("high-contrast")
-    }
+    if (newSettings.highContrast) root.classList.add("high-contrast")
+    else root.classList.remove("high-contrast")
 
-    // Dark mode
-    if (newSettings.darkMode) {
-      root.classList.add("dark")
-    } else {
-      root.classList.remove("dark")
-    }
+    if (newSettings.darkMode) root.classList.add("dark")
+    else root.classList.remove("dark")
 
-    // Reduced motion
-    if (newSettings.reducedMotion) {
-      root.classList.add("reduce-motion")
-    } else {
-      root.classList.remove("reduce-motion")
-    }
+    if (newSettings.reducedMotion) root.classList.add("reduce-motion")
+    else root.classList.remove("reduce-motion")
 
-    // Large buttons
-    if (newSettings.largeButtons) {
-      root.classList.add("large-buttons")
-    } else {
-      root.classList.remove("large-buttons")
-    }
+    if (newSettings.largeButtons) root.classList.add("large-buttons")
+    else root.classList.remove("large-buttons")
 
-    // Color blind friendly
-    if (newSettings.colorBlindFriendly) {
-      root.classList.add("color-blind-friendly")
-    } else {
-      root.classList.remove("color-blind-friendly")
-    }
+    if (newSettings.colorBlindFriendly) root.classList.add("color-blind-friendly")
+    else root.classList.remove("color-blind-friendly")
   }
 
   const updateSetting = (key: keyof AccessibilitySettings, value: any) => {
@@ -99,6 +88,7 @@ export default function AccessibilityFeatures() {
       screenReader: false,
       largeButtons: false,
       colorBlindFriendly: false,
+      fontFamily: "sans-serif",
     }
     setSettings(defaultSettings)
   }
@@ -113,6 +103,14 @@ export default function AccessibilityFeatures() {
     if (settings.fontSize > 80) {
       updateSetting("fontSize", settings.fontSize - 10)
     }
+  }
+
+  // 🔤 Cambiar tipografía con botón
+  const changeFontFamily = () => {
+    const order = ["sans-serif", "serif", "monospace"]
+    const currentIndex = order.indexOf(settings.fontFamily)
+    const nextIndex = (currentIndex + 1) % order.length
+    updateSetting("fontFamily", order[nextIndex])
   }
 
   if (!isOpen) {
@@ -147,7 +145,7 @@ export default function AccessibilityFeatures() {
           </div>
 
           <div className="space-y-4">
-            {/* Font Size */}
+            {/* Tamaño de texto */}
             <div>
               <label className="text-sm font-medium mb-2 block">Tamaño de Texto</label>
               <div className="flex items-center space-x-2">
@@ -156,7 +154,6 @@ export default function AccessibilityFeatures() {
                   size="sm"
                   onClick={decreaseFontSize}
                   disabled={settings.fontSize <= 80}
-                  aria-label="Disminuir tamaño de texto"
                 >
                   <ZoomOut className="h-4 w-4" />
                 </Button>
@@ -168,14 +165,13 @@ export default function AccessibilityFeatures() {
                   size="sm"
                   onClick={increaseFontSize}
                   disabled={settings.fontSize >= 150}
-                  aria-label="Aumentar tamaño de texto"
                 >
                   <ZoomIn className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
-            {/* Visual Options */}
+            {/* Opciones visuales */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Opciones Visuales</label>
 
@@ -188,7 +184,6 @@ export default function AccessibilityFeatures() {
                   variant={settings.highContrast ? "default" : "outline"}
                   size="sm"
                   onClick={() => updateSetting("highContrast", !settings.highContrast)}
-                  aria-label={settings.highContrast ? "Desactivar alto contraste" : "Activar alto contraste"}
                 >
                   {settings.highContrast ? "ON" : "OFF"}
                 </Button>
@@ -203,7 +198,6 @@ export default function AccessibilityFeatures() {
                   variant={settings.darkMode ? "default" : "outline"}
                   size="sm"
                   onClick={() => updateSetting("darkMode", !settings.darkMode)}
-                  aria-label={settings.darkMode ? "Desactivar modo oscuro" : "Activar modo oscuro"}
                 >
                   {settings.darkMode ? "ON" : "OFF"}
                 </Button>
@@ -218,16 +212,13 @@ export default function AccessibilityFeatures() {
                   variant={settings.colorBlindFriendly ? "default" : "outline"}
                   size="sm"
                   onClick={() => updateSetting("colorBlindFriendly", !settings.colorBlindFriendly)}
-                  aria-label={
-                    settings.colorBlindFriendly ? "Desactivar colores amigables" : "Activar colores amigables"
-                  }
                 >
                   {settings.colorBlindFriendly ? "ON" : "OFF"}
                 </Button>
               </div>
             </div>
 
-            {/* Motion & Interaction */}
+            {/* Movimiento e Interacción */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Movimiento e Interacción</label>
 
@@ -240,7 +231,6 @@ export default function AccessibilityFeatures() {
                   variant={settings.reducedMotion ? "default" : "outline"}
                   size="sm"
                   onClick={() => updateSetting("reducedMotion", !settings.reducedMotion)}
-                  aria-label={settings.reducedMotion ? "Activar animaciones" : "Reducir animaciones"}
                 >
                   {settings.reducedMotion ? "ON" : "OFF"}
                 </Button>
@@ -255,14 +245,32 @@ export default function AccessibilityFeatures() {
                   variant={settings.largeButtons ? "default" : "outline"}
                   size="sm"
                   onClick={() => updateSetting("largeButtons", !settings.largeButtons)}
-                  aria-label={settings.largeButtons ? "Desactivar botones grandes" : "Activar botones grandes"}
                 >
                   {settings.largeButtons ? "ON" : "OFF"}
                 </Button>
               </div>
             </div>
 
-            {/* Screen Reader */}
+            {/* 🔤 Cambio de Tipografía (nuevo botón) */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Font className="h-4 w-4" />
+                <span className="text-sm">Cambiar Tipografía</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={changeFontFamily}
+              >
+                {settings.fontFamily === "sans-serif"
+                  ? "Sans"
+                  : settings.fontFamily === "serif"
+                  ? "Serif"
+                  : "Mono"}
+              </Button>
+            </div>
+
+            {/* Lector de pantalla */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Volume2 className="h-4 w-4" />
@@ -272,18 +280,16 @@ export default function AccessibilityFeatures() {
                 variant={settings.screenReader ? "default" : "outline"}
                 size="sm"
                 onClick={() => updateSetting("screenReader", !settings.screenReader)}
-                aria-label={settings.screenReader ? "Desactivar lector de pantalla" : "Activar lector de pantalla"}
               >
                 {settings.screenReader ? "ON" : "OFF"}
               </Button>
             </div>
 
-            {/* Reset Button */}
+            {/* Restablecer */}
             <Button
               variant="outline"
               className="w-full bg-transparent"
               onClick={resetSettings}
-              aria-label="Restablecer configuración de accesibilidad"
             >
               <RotateCcw className="h-4 w-4 mr-2" />
               Restablecer
