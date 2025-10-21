@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
   Accessibility,
   ZoomIn,
@@ -15,18 +15,19 @@ import {
   Volume2,
   RotateCcw,
   Settings,
-  Font,
-} from "lucide-react"
+} from "lucide-react";
 
 interface AccessibilitySettings {
-  fontSize: number
-  highContrast: boolean
-  darkMode: boolean
-  reducedMotion: boolean
-  screenReader: boolean
-  largeButtons: boolean
-  colorBlindFriendly: boolean
-  fontFamily: string
+  fontSize: number;
+  highContrast: boolean;
+  darkMode: boolean;
+  reducedMotion: boolean;
+  screenReader: boolean;
+  largeButtons: boolean;
+  colorBlindFriendly: boolean;
+  fontFamily: string;
+  grayscale: boolean;
+  readingGuide: boolean;
 }
 
 const DEFAULTS: AccessibilitySettings = {
@@ -38,164 +39,99 @@ const DEFAULTS: AccessibilitySettings = {
   largeButtons: false,
   colorBlindFriendly: false,
   fontFamily: "sans-serif",
-}
+  grayscale: false,
+  readingGuide: false,
+};
 
 export default function AccessibilityFeatures() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [settings, setSettings] = useState<AccessibilitySettings>(DEFAULTS)
+  const [isOpen, setIsOpen] = useState(false);
+  const [settings, setSettings] = useState<AccessibilitySettings>(DEFAULTS);
 
-  // cargar
   useEffect(() => {
-    const saved = localStorage.getItem("accessibility-settings")
+    const saved = localStorage.getItem("accessibility-settings");
     if (saved) {
       try {
-        setSettings(JSON.parse(saved))
+        const parsedSettings: AccessibilitySettings = JSON.parse(saved);
+        setSettings(parsedSettings);
       } catch {
-        setSettings(DEFAULTS)
+        setSettings(DEFAULTS);
       }
     }
-  }, [])
+  }, []);
 
-  // guardar y aplicar
   useEffect(() => {
-    localStorage.setItem("accessibility-settings", JSON.stringify(settings))
-    applySettings(settings)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [settings])
+    localStorage.setItem("accessibility-settings", JSON.stringify(settings));
+    applySettings(settings);
+  }, [settings]);
 
   const applySettings = (s: AccessibilitySettings) => {
-    const root = document.documentElement
+    const root = document.documentElement;
+    root.style.fontSize = `${s.fontSize}%`;
+    root.style.fontFamily = s.fontFamily;
 
-    // tamaño y tipografía
-    root.style.fontSize = `${s.fontSize}%`
-    root.style.fontFamily = s.fontFamily
+    toggleClass(root, "high-contrast", s.highContrast);
+    toggleClass(root, "reduce-motion", s.reducedMotion);
+    toggleClass(root, "large-buttons", s.largeButtons);
+    toggleClass(root, "color-blind-friendly", s.colorBlindFriendly);
+    toggleClass(root, "grayscale", s.grayscale);
+    toggleClass(root, "reading-guide", s.readingGuide);
 
-    // clases de utilidad
-    toggleClass(root, "high-contrast", s.highContrast)
-    toggleClass(root, "reduce-motion", s.reducedMotion)
-    toggleClass(root, "large-buttons", s.largeButtons)
-    toggleClass(root, "color-blind-friendly", s.colorBlindFriendly)
-
-    // modo oscuro: además de clase, escribimos variables para cubrir todo
     if (s.darkMode) {
-      root.classList.add("dark")
-      // variables que cubren elementos no diseñados con dark:...
-      setDarkVariables(root)
-      // cambiar images with data-dark
-      swapImagesForDarkMode(true)
-      // meta theme-color (mobile address bar)
-      setMetaThemeColor("#0b0b0f")
+      root.classList.add("dark");
+      setDarkVariables(root);
     } else {
-      root.classList.remove("dark")
-      setLightVariables(root)
-      swapImagesForDarkMode(false)
-      setMetaThemeColor("#ffffff")
+      root.classList.remove("dark");
+      setLightVariables(root);
     }
+  };
 
-    // high contrast + color blind may change accent colors
-    if (s.highContrast) setHighContrastVariables(root)
-    else if (s.colorBlindFriendly) setColorBlindVariables(root)
-  }
-
-  // helpers para variables
   const setDarkVariables = (root: HTMLElement) => {
-    root.style.setProperty("--bg", "#0b0b0f")
-    root.style.setProperty("--text", "#e6e6e6")
-    root.style.setProperty("--card", "#111217")
-    root.style.setProperty("--muted", "#9a9aa0")
-    root.style.setProperty("--primary", "#8ab4ff")
-    root.style.setProperty("--input-bg", "#0f1113")
-    root.style.setProperty("--border", "#1f2937")
-  }
+    root.style.setProperty("--bg", "#1e1e1e"); // Color de fondo oscuro
+    root.style.setProperty("--text", "#ffffff"); // Texto blanco
+    root.style.setProperty("--card", "#2c2c2c");
+    root.style.setProperty("--muted", "#b3b3b3");
+    root.style.setProperty("--primary", "#bb86fc");
+    root.style.setProperty("--input-bg", "#333");
+    root.style.setProperty("--border", "#444");
+  };
 
   const setLightVariables = (root: HTMLElement) => {
-    root.style.setProperty("--bg", "#ffffff")
-    root.style.setProperty("--text", "#111827")
-    root.style.setProperty("--card", "#f6f6f9")
-    root.style.setProperty("--muted", "#6b7280")
-    root.style.setProperty("--primary", "#1a73e8")
-    root.style.setProperty("--input-bg", "#ffffff")
-    root.style.setProperty("--border", "#e5e7eb")
-  }
-
-  const setHighContrastVariables = (root: HTMLElement) => {
-    root.style.setProperty("--text", "#000000")
-    root.style.setProperty("--bg", "#ffff00")
-    root.style.setProperty("--card", "#ffffff")
-    root.style.setProperty("--primary", "#000000")
-  }
-
-  const setColorBlindVariables = (root: HTMLElement) => {
-    // paleta amigable (ejemplo)
-    root.style.setProperty("--primary", "#0b85a6")
-  }
-
-  const setMetaThemeColor = (color: string) => {
-    let meta = document.querySelector('meta[name="theme-color"]') as HTMLMetaElement | null
-    if (!meta) {
-      meta = document.createElement("meta")
-      meta.name = "theme-color"
-      document.head.appendChild(meta)
-    }
-    meta.content = color
-  }
+    root.style.setProperty("--bg", "#ffffff");
+    root.style.setProperty("--text", "#0d0d0d"); // Texto oscuro
+    root.style.setProperty("--card", "#f9f9f9");
+    root.style.setProperty("--muted", "#6b7280");
+    root.style.setProperty("--primary", "#1a73e8");
+    root.style.setProperty("--input-bg", "#ffffff");
+    root.style.setProperty("--border", "#e5e7eb");
+  };
 
   const toggleClass = (el: Element, cls: string, enabled: boolean) => {
-    if (enabled) el.classList.add(cls)
-    else el.classList.remove(cls)
-  }
-
-  // intercambio de imágenes con atributo data-dark
-  const swapImagesForDarkMode = (enable: boolean) => {
-    // imgs y svgs con data-dark
-    const nodes = Array.from(document.querySelectorAll<HTMLImageElement | HTMLSourceElement | HTMLVideoElement>("img[data-dark], source[data-dark]"))
-    nodes.forEach((node) => {
-      const el = node as HTMLImageElement
-      const dark = el.getAttribute("data-dark")
-      const light = el.getAttribute("src") || el.getAttribute("data-light")
-      if (!dark) return
-      if (enable) {
-        // guardar src original si no está guardado
-        if (!el.dataset.light) el.dataset.light = el.getAttribute("src") || ""
-        if (el.dataset.light !== dark) el.setAttribute("src", dark)
-      } else {
-        // restaurar
-        if (el.dataset.light) el.setAttribute("src", el.dataset.light)
-      }
-    })
-
-    // para backgrounds inline (data-bg-dark)
-    const bgEls = Array.from(document.querySelectorAll<HTMLElement>("[data-bg-dark]"))
-    bgEls.forEach((el) => {
-      const darkBg = el.getAttribute("data-bg-dark")
-      const lightBg = el.getAttribute("data-bg-light") || ""
-      if (enable && darkBg) el.style.backgroundImage = `url(${darkBg})`
-      else el.style.backgroundImage = lightBg ? `url(${lightBg})` : ""
-    })
-  }
+    if (enabled) el.classList.add(cls);
+    else el.classList.remove(cls);
+  };
 
   const updateSetting = (key: keyof AccessibilitySettings, value: any) => {
-    setSettings((prev) => ({ ...prev, [key]: value }))
-  }
+    setSettings((prev) => ({ ...prev, [key]: value }));
+  };
 
   const resetSettings = () => {
-    setSettings(DEFAULTS)
-  }
+    setSettings(DEFAULTS);
+  };
 
   const increaseFontSize = () => {
-    if (settings.fontSize < 150) updateSetting("fontSize", settings.fontSize + 10)
-  }
+    if (settings.fontSize < 150) updateSetting("fontSize", settings.fontSize + 10);
+  };
 
   const decreaseFontSize = () => {
-    if (settings.fontSize > 80) updateSetting("fontSize", settings.fontSize - 10)
-  }
+    if (settings.fontSize > 80) updateSetting("fontSize", settings.fontSize - 10);
+  };
 
   const changeFontFamily = () => {
-    const order = ["sans-serif", "serif", "monospace"]
-    const currentIndex = order.indexOf(settings.fontFamily)
-    const nextIndex = (currentIndex + 1) % order.length
-    updateSetting("fontFamily", order[nextIndex])
-  }
+    const order = ["sans-serif", "serif", "monospace"];
+    const currentIndex = order.indexOf(settings.fontFamily);
+    const nextIndex = (currentIndex + 1) % order.length;
+    updateSetting("fontFamily", order[nextIndex]);
+  };
 
   if (!isOpen) {
     return (
@@ -206,7 +142,7 @@ export default function AccessibilityFeatures() {
       >
         <Accessibility className="h-6 w-6" />
       </Button>
-    )
+    );
   }
 
   return (
@@ -300,6 +236,34 @@ export default function AccessibilityFeatures() {
                   {settings.colorBlindFriendly ? "ON" : "OFF"}
                 </Button>
               </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Palette className="h-4 w-4" />
+                  <span className="text-sm">Escala de Grises</span>
+                </div>
+                <Button
+                  variant={settings.grayscale ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => updateSetting("grayscale", !settings.grayscale)}
+                >
+                  {settings.grayscale ? "ON" : "OFF"}
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Palette className="h-4 w-4" />
+                  <span className="text-sm">Guía de Lectura</span>
+                </div>
+                <Button
+                  variant={settings.readingGuide ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => updateSetting("readingGuide", !settings.readingGuide)}
+                >
+                  {settings.readingGuide ? "ON" : "OFF"}
+                </Button>
+              </div>
             </div>
 
             {/* Movimiento e Interacción */}
@@ -335,10 +299,10 @@ export default function AccessibilityFeatures() {
               </div>
             </div>
 
-            {/* 🔤 Cambio de Tipografía (nuevo botón) */}
+            {/* Cambio de Tipografía */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Font className="h-4 w-4" />
+                <Type className="h-4 w-4" />
                 <span className="text-sm">Cambiar Tipografía</span>
               </div>
               <Button variant="outline" size="sm" onClick={changeFontFamily}>
@@ -370,6 +334,7 @@ export default function AccessibilityFeatures() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
+
 
