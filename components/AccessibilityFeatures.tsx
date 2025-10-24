@@ -165,7 +165,7 @@ export default function AccessibilityFeatures() {
           </div>
 
           <div className="space-y-4">
-            {/* Tamaño de texto */}
+            {/* Tamaño de texto. */}
             <div>
               <label className="text-sm font-medium mb-2 block">Tamaño de Texto</label>
               <div className="flex items-center space-x-2">
