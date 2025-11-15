@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, ArrowLeft, Mail, Lock } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { RotationalCaptcha } from "@/components/RotationalCaptcha"
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -20,37 +20,22 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [showCaptcha, setShowCaptcha] = useState(false)
+  const [isCaptchaSolved, setIsCaptchaSolved] = useState(false)
   const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleLogin = async () => {
     setIsLoading(true)
     setError("")
 
     try {
-      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500))
 
-      // Mock authentication logic
       if (email === "admin@motofull.com" && password === "admin123") {
-        localStorage.setItem(
-          "user",
-          JSON.stringify({
-            email,
-            role: "admin",
-            name: "Administrador",
-          }),
-        )
+        localStorage.setItem("user", JSON.stringify({ email, role: "admin", name: "Administrador" }))
         router.push("/admin/dashboard")
       } else if (email && password.length >= 6) {
-        localStorage.setItem(
-          "user",
-          JSON.stringify({
-            email,
-            role: "user",
-            name: email.split("@")[0],
-          }),
-        )
+        localStorage.setItem("user", JSON.stringify({ email, role: "user", name: email.split("@")[0] }))
         router.push("/")
       } else {
         setError("Credenciales inválidas. Intenta con admin@motofull.com / admin123")
@@ -62,10 +47,37 @@ export default function LoginPage() {
     }
   }
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!email || !password) {
+      setError("Por favor, ingresa tu correo y contraseña.")
+      return
+    }
+
+    if (!showCaptcha && !isCaptchaSolved) {
+      setShowCaptcha(true)
+      setError("")
+      return
+    }
+
+    if (showCaptcha && !isCaptchaSolved) {
+      setError("Por favor, resuelve el CAPTCHA para iniciar sesión.")
+      return
+    }
+
+    if (isCaptchaSolved) {
+      handleLogin()
+    }
+  }
+
+  const handleCaptchaValidation = (isValid: boolean) => {
+    setIsCaptchaSolved(isValid)
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Back to home */}
         <Link href="/" className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-6">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Volver a Motofull
@@ -81,6 +93,7 @@ export default function LoginPage() {
             <CardTitle className="text-2xl font-bold">Iniciar Sesión</CardTitle>
             <CardDescription>Ingresa a tu cuenta de Motofull</CardDescription>
           </CardHeader>
+
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
@@ -128,12 +141,19 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              {showCaptcha && (
+                <RotationalCaptcha 
+                  onValidate={handleCaptchaValidation} 
+                  isLoading={isLoading} 
+                />
+              )}
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="remember"
                     checked={rememberMe}
-                    onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                    onCheckedChange={(checked: boolean) => setRememberMe(checked as boolean)}
                   />
                   <Label htmlFor="remember" className="text-sm">
                     Recordarme
@@ -144,8 +164,17 @@ export default function LoginPage() {
                 </Link>
               </div>
 
-              <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700" disabled={isLoading}>
-                {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
+              <Button 
+                type="submit" 
+                className="w-full bg-orange-600 hover:bg-orange-700" 
+                disabled={isLoading || (showCaptcha && !isCaptchaSolved)}
+              >
+                {isLoading 
+                  ? "Iniciando sesión..." 
+                  : showCaptcha 
+                    ? "Verificar y Continuar" 
+                    : "Iniciar Sesión"
+                }
               </Button>
             </form>
 
@@ -158,7 +187,6 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Demo credentials - Only show for admin users */}
             {typeof window !== "undefined" && window.location.search.includes("admin=true") && (
               <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                 <p className="text-xs text-blue-800 font-medium mb-1">Credenciales de prueba (Solo Admin):</p>
@@ -172,3 +200,4 @@ export default function LoginPage() {
     </div>
   )
 }
+
