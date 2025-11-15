@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, ArrowLeft, Mail, Lock, User, Phone } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { RotationalCaptcha } from "@/components/RotationalCaptcha"
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -28,7 +29,7 @@ export default function RegisterPage() {
   const [acceptNewsletter, setAcceptNewsletter] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-  const [captchaVerified, setCaptchaVerified] = useState(false)
+  const [isCaptchaSolved, setIsCaptchaSolved] = useState(false)
   const router = useRouter()
 
   const handleInputChange = (field: string, value: string) => {
@@ -48,9 +49,9 @@ export default function RegisterPage() {
     if (!acceptTerms) {
       return "Debes aceptar los términos y condiciones"
     }
-    if (!captchaVerified) {
-      return "Debes verificar el captcha"
-    }
+    if (!isCaptchaSolved) {
+  return "Debes verificar el captcha"
+}
     return null
   }
 
@@ -77,40 +78,6 @@ export default function RegisterPage() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  // Simple captcha component
-  const SimpleCaptcha = () => {
-    const [captchaQuestion] = useState(() => {
-      const num1 = Math.floor(Math.random() * 10) + 1
-      const num2 = Math.floor(Math.random() * 10) + 1
-      return { num1, num2, answer: num1 + num2 }
-    })
-    const [userAnswer, setUserAnswer] = useState("")
-
-    const handleCaptchaChange = (value: string) => {
-      setUserAnswer(value)
-      setCaptchaVerified(Number.parseInt(value) === captchaQuestion.answer)
-    }
-
-    return (
-      <div className="space-y-2">
-        <Label>Verificación (Captcha)</Label>
-        <div className="flex items-center space-x-2">
-          <div className="bg-gray-100 p-2 rounded text-center font-mono">
-            {captchaQuestion.num1} + {captchaQuestion.num2} = ?
-          </div>
-          <Input
-            type="number"
-            placeholder="Respuesta"
-            value={userAnswer}
-            onChange={(e) => handleCaptchaChange(e.target.value)}
-            className="w-20"
-          />
-          {captchaVerified && <span className="text-green-600">✓</span>}
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -246,7 +213,10 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <SimpleCaptcha />
+             <RotationalCaptcha 
+              onValidate={(isValid) => setIsCaptchaSolved(isValid)} 
+              isLoading={isLoading} 
+              />
 
               <div className="space-y-3">
                 <div className="flex items-start space-x-2">
